@@ -1,159 +1,124 @@
-# Turborepo starter
+# AI Interview Coach
 
-This Turborepo starter is maintained by the Turborepo core team.
+Full-stack chat interview assistant built with Turborepo:
 
-## Using this example
+- `apps/api`: NestJS + TypeORM + LangChain + Ollama
+- `apps/web`: Next.js React frontend chat UI
+- `packages/*`: shared tooling configs (eslint, tsconfig)
 
-Run the following command:
+## Features
 
-```sh
-npx create-turbo@latest
+- role-based behaviour: interviewer / reviewer / mentor
+- message history per session (Postgres-backed)
+- in-memory LangChain history as `ChatMessageHistory`
+- REST endpoints for history, query, clear
+
+## Requirements
+
+- Node.js 20+
+- Yarn v1
+- PostgreSQL
+- Ollama server environment for `@langchain/ollama` model
+
+## Environment
+
+Create `.env` in `apps/api` (or root) with:
+
+```
+PORT=4000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=youruser
+DB_PASSWORD=yourpass
+DB_NAME=ai_interview_coach
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.1
 ```
 
-## What's inside?
+## Local setup
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+git clone <repo-url>
+cd AI_Interview_Coach
+yarn install
+yarn workspace api install
+yarn workspace web install
 ```
 
-Without global `turbo`, use your package manager:
+## Run
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+### Backend
+
+```bash
+cd apps/api
+yarn start:dev
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Expected API at `http://localhost:4000` (or 3001 if PORT adjusted)
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+### Frontend
 
-```sh
-turbo build --filter=docs
+```bash
+cd apps/web
+yarn dev
 ```
 
-Without global `turbo`:
+Open `http://localhost:3000`.
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+## API
+
+- `POST /chat` body `{ sessionId, message, behaviour }`
+- `GET /chat/:sessionId` history
+- `DELETE /chat/:sessionId` clear history
+
+### Behaviour values
+
+- `interviewer`
+- `reviewer`
+- `mentor`
+
+## Backend flow
+
+- `apps/api/src/chat/chat.controller.ts` defines routes
+- `ChatService.chat()` handles query, saves user and assistant messages
+- `RunnableWithMessageHistory` loads DB history via `toChatMessageHistory`
+- `ChatPromptTemplate` uses `MessagesPlaceholder('history')`
+
+## Frontend flow
+
+- `apps/web/app/chat/page.tsx` manages UI + localStorage session ID
+- loads `GET /chat/:sessionId` on mount
+- sends chat with `POST /chat`
+- UI renders message bubbles and typing state
+
+## Database
+
+Entity: `apps/api/src/chat/user.entity.ts`
+
+- `id`: primary
+- `sessionId`: session key
+- `role`: `USER` | `ASSISTANT` | ...
+- `content`: text
+
+## Commands
+
+```bash
+yarn workspace api typecheck
+yarn workspace api lint
+yarn workspace api test
+yarn workspace api test:e2e
+yarn workspace api test:cov
 ```
 
-### Develop
+## Troubleshoot
 
-To develop all apps and packages, run the following command:
+- Confirm PostgreSQL is running and env vars are seeded
+- Ensure Ollama is running and `OLLAMA_BASE_URL` is correct
+- Adjust frontend API host if backend port differs
+- Reset localStorage for cleaned session ID
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Deployment
 
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- Build: `yarn turbo build`
+- Deploy API on Node host with env vars
+- Deploy web as Next.js site (Vercel recommended)
