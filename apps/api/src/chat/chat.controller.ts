@@ -24,7 +24,8 @@ export class ChatController {
   async chat(
     @Body('sessionId') sessionId: string,
     @Body('message') message: string,
+    @Body('behaviour') behaviour: string,
   ) {
-    return this.chatService.chat(sessionId, message);
+    return this.chatService.chat(sessionId, message, behaviour);
   }
 }

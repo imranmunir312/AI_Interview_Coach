@@ -10,6 +10,7 @@ type UiMessage = {
 export default function ChatPage() {
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
+  const [behaviour, setBehaviour] = useState("interviewer");
   const [loading, setLoading] = useState(false);
 
   const sessionId = useMemo(() => {
@@ -60,6 +61,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           sessionId,
           message: userMessage,
+          behaviour,
         }),
       });
 
@@ -127,6 +129,17 @@ export default function ChatPage() {
           placeholder="Type your message..."
           style={{ flex: 1, padding: 12 }}
         />
+        <select
+          value={behaviour}
+          onChange={(e) => setBehaviour(e.target.value)}
+          style={{ marginLeft: 8 }}
+          name="behaviour"
+          id="behaviour"
+        >
+          <option value="interviewer">Interviewer</option>
+          <option value="reviewer">Reviewer</option>
+          <option value="mentor">Mentor</option>
+        </select>
         <button type="submit" disabled={loading}>
           Send
         </button>
